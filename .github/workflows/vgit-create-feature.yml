@@ -219,6 +219,7 @@ jobs:
           if [ -n "${{ secrets.CUSTOM_BUILD_DIR }}" ]; then
             CUSTOM_DIR="${{ secrets.CUSTOM_BUILD_DIR }}"
             if [ -d "$CUSTOM_DIR" ] && [ "$(ls -A $CUSTOM_DIR 2>/dev/null)" ]; then
+              BUILD_DIR="$CUSTOM_DIR"
               echo "BUILD_DIR=$CUSTOM_DIR" >> $GITHUB_ENV
               echo "✅ Using custom build directory: $CUSTOM_DIR"
               ls -la "$CUSTOM_DIR"
@@ -233,6 +234,7 @@ jobs:
           
           for dir in "${BUILD_DIRS[@]}"; do
             if [ -d "$dir" ] && [ "$(ls -A $dir 2>/dev/null)" ]; then
+              BUILD_DIR="$dir"
               echo "BUILD_DIR=$dir" >> $GITHUB_ENV
               echo "✅ Build output directory found: $dir"
               break
@@ -242,6 +244,7 @@ jobs:
           # If no build directory found, use current directory for static sites
           if [ -z "${BUILD_DIR:-}" ]; then
             if [ -f "index.html" ]; then
+              BUILD_DIR="."
               echo "BUILD_DIR=." >> $GITHUB_ENV
               echo "✅ Using current directory for static site"
             else
