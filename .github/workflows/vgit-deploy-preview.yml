@@ -168,7 +168,7 @@ jobs:
       - name: Detect build output directory
         run: |
           echo "📁 Detecting build output directory..."
-          BUILD_DIR=""
+          BUILD_DIR="dist"  # Default value
 
           # Check for custom build directory from secret first
           if [ -n "${{ secrets.CUSTOM_BUILD_DIR }}" ]; then
