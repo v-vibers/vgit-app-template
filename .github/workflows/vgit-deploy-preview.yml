@@ -168,14 +168,16 @@ jobs:
       - name: Detect build output directory
         run: |
           echo "📁 Detecting build output directory..."
+          BUILD_DIR=""
           
           # Check for custom build directory from secret first
           if [ -n "${{ secrets.CUSTOM_BUILD_DIR }}" ]; then
             CUSTOM_DIR="${{ secrets.CUSTOM_BUILD_DIR }}"
             if [ -d "$CUSTOM_DIR" ] && [ "$(ls -A $CUSTOM_DIR 2>/dev/null)" ]; then
-              echo "BUILD_DIR=$CUSTOM_DIR" >> $GITHUB_ENV
-              echo "✅ Using custom build directory: $CUSTOM_DIR"
-              ls -la "$CUSTOM_DIR"
+              BUILD_DIR="$CUSTOM_DIR"
+              echo "BUILD_DIR=$BUILD_DIR" >> $GITHUB_ENV
+              echo "✅ Using custom build directory: $BUILD_DIR"
+              ls -la "$BUILD_DIR"
               exit 0
             else
               echo "⚠️ Custom build directory '$CUSTOM_DIR' not found or empty, falling back to auto-detection"
@@ -187,16 +189,18 @@ jobs:
           
           for dir in "${BUILD_DIRS[@]}"; do
             if [ -d "$dir" ] && [ "$(ls -A $dir 2>/dev/null)" ]; then
-              echo "BUILD_DIR=$dir" >> $GITHUB_ENV
-              echo "✅ Build output directory found: $dir"
+              BUILD_DIR="$dir"
+              echo "BUILD_DIR=$BUILD_DIR" >> $GITHUB_ENV
+              echo "✅ Build output directory found: $BUILD_DIR"
               break
             fi
           done
           
           # If no build directory found, use current directory for static sites
-          if [ -z "${BUILD_DIR:-}" ]; then
+          if [ -z "$BUILD_DIR" ]; then
             if [ -f "index.html" ]; then
-              echo "BUILD_DIR=." >> $GITHUB_ENV
+              BUILD_DIR="."
+              echo "BUILD_DIR=$BUILD_DIR" >> $GITHUB_ENV
               echo "✅ Using current directory for static site"
             else
               echo "❌ No build output directory found"
@@ -208,7 +212,7 @@ jobs:
           
           # List contents of chosen build directory
           echo "📄 Build directory contents:"
-          ls -la "${BUILD_DIR}"
+          ls -la "$BUILD_DIR"
 
       - name: Install Netlify CLI
         run: |
