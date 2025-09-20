@@ -120,7 +120,7 @@ jobs:
           function safeRead(p) {
             try { return fs.readFileSync(p, 'utf8'); } catch { return ''; }
           }
-          
+
           const pkgJson = safeRead('package.json');
           const indexHtml = safeRead('index.html');
           const appTsx = safeRead('src/App.tsx');
@@ -162,7 +162,7 @@ jobs:
             ].join('\n');
 
             const msg = await client.messages.create({
-              model: 'claude-3-5-sonnet-20241220',
+              model: 'claude-3-5-sonnet-20241022',
               max_tokens: 3000,
               temperature: 0.2,
               system,
