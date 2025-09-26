@@ -360,7 +360,7 @@ jobs:
         if: env.PREVIEW_BUILD_SUCCESS == 'true'
         run: |
           echo "🚀 Installing and using Netlify CLI directly..."
-          npm install -g netlify-cli
+          npm install -g netlify-cli@17.10.1
 
           # Deploy and capture output
           netlify deploy --dir=${{ env.BUILD_DIR }} --json > deploy_output.json
@@ -450,13 +450,13 @@ jobs:
             await page.setViewportSize({ width: 1280, height: 720 });
             
             console.log('📄 Navigating to:', process.env.PREVIEW_URL);
-            await page.goto(process.env.PREVIEW_URL, { 
-              waitUntil: 'networkidle',
-              timeout: 60000 
+            await page.goto(process.env.PREVIEW_URL, {
+              waitUntil: 'domcontentloaded',
+              timeout: 20000
             });
             
             // Wait for page to stabilize
-            await page.waitForTimeout(2000);
+            await page.waitForTimeout(1000);
             
             console.log('📸 Capturing screenshot...');
             const screenshot = await page.screenshot({ 
