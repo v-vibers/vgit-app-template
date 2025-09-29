@@ -286,7 +286,7 @@ jobs:
 
           # Run Claude Code CLI with the prompt
           # The CLI will automatically detect and use CLAUDE.md through the prompt instructions
-          claude --allowedTools Edit,Read,Write,Glob,Grep,"Bash(npm install:*)","Bash(npm i:*)" < feature_prompt.txt || {
+          claude --output-format stream-json --verbose --allowedTools Edit,Read,Write,Glob,Grep,"Bash(npm install:*)","Bash(npm i:*)" < feature_prompt.txt || {
             echo "⚠️ Claude Code CLI execution had issues, checking for changes..."
           }
 
