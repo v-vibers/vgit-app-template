@@ -75,7 +75,25 @@ jobs:
           git checkout -b "${{ github.event.inputs.branch_name }}"
 
           echo "✅ Feature branch created successfully"
+      - name: Update commit with pending preview info
+        run: |
+          echo "📝 Starting feature request"
 
+          # Amend commit with preview information
+          UPDATED_COMMIT_MSG="feat: ${{ github.event.inputs.request }}
+
+          🤖 Generated with VGit AI
+
+          Branch: ${{ github.event.inputs.branch_name }}
+          Requested by: ${{ github.event.inputs.username }}
+
+          ---PREVIEW-INFO---
+          Preview URL: still_pending
+          Screenshot URL: still_pending
+          "
+
+          git commit --amend -m "$UPDATED_COMMIT_MSG"
+          git push origin "${{ github.event.inputs.branch_name }}" --force-with-lease
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
