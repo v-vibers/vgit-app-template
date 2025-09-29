@@ -293,6 +293,8 @@ jobs:
 
       - name: Install new dependencies (if package.json changed)
         run: |
+          cat package.json
+        
           if git diff --name-only | grep -q "package.json"; then
             echo "📦 package.json was modified, installing new dependencies..."
             npm install
