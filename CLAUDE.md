@@ -17,8 +17,7 @@ This document is a concise guide to installing, integrating, and using the React
 If you're using Vite or Node, follow these guidelines:
 
 #### Environment Variables
-- Use the `VITE_` prefix for environment variables.
-- Access via `import.meta.env.VITE_*`.
+- The VITE_SUBSCRIBE_DEV_PROJECT_TOKEN is available in the build step that the user does manually, so do not leave any traces of mock or placeholder implementations where the token is needed.
 
 #### React Version
 Vite and Node projects support React 18 and newer. If you encounter errors related to React version compatibility, ensure you are using React 18+.
@@ -27,44 +26,7 @@ Vite and Node projects support React 18 and newer. If you encounter errors relat
 npm install @subscribe.dev/react react@^18.2.0 react-dom@^18.2.0
 ```
 
-#### Environment Setup
-
-**Demo Mode (No Setup Required):**
-For development and testing, you can use demo mode without any token:
-```tsx
-<SubscribeDevProvider>
-  <YourApp />
-</SubscribeDevProvider>
-```
-
-**Production Setup:**
-**Step 1: Get your Project Public Key**
-1. Sign up at [Subscribe.dev](https://platform.subscribe.dev)
-2. Create a new project or select an existing one
-3. Copy your **Project Public Key** (starts with `pub_`)
-
-**Step 2: Create .env file**
-```bash
-# .env file for Vite or Node
-VITE_SUBSCRIBE_DEV_PROJECT_TOKEN=pub_your_actual_token_here
-```
-
-**Important**: Replace `pub_your_actual_token_here` with your actual Project Public Key from subscribe.dev dashboard.
-
 #### Provider Setup for Vite/Node
-
-**Demo Mode:**
-```tsx
-import { SubscribeDevProvider } from '@subscribe.dev/react';
-
-function App() {
-  return (
-    <SubscribeDevProvider>
-      <YourApp />
-    </SubscribeDevProvider>
-  );
-}
-```
 
 **Production Mode:**
 ```tsx
@@ -99,19 +61,6 @@ rm -rf node_modules && npm install
 
 3) Add the provider
 
-**Demo Mode (No Token Required):**
-```tsx
-import { SubscribeDevProvider } from '@subscribe.dev/react';
-
-export function App() {
-  return (
-    <SubscribeDevProvider>
-      <AIApplication />
-    </SubscribeDevProvider>
-  );
-}
-```
-
 **For Vite/Node projects (Production):**
 ```tsx
 import { SubscribeDevProvider } from '@subscribe.dev/react';
@@ -125,26 +74,7 @@ export function App() {
 }
 ```
 
-**Environment file setup:**
-
-### Development vs Production
-
-**Demo Mode (Development):**
-- No token required — you can try the SDK right away
-- Provides temporary database and limited AI usage
-- Simply omit the `projectToken` prop from `SubscribeDevProvider`
-
-**Production Mode:**
-For production, create a project in the Subscribe.dev Platform and use its Project Public Key:
-
-1. **Get your token**: Sign up at [Subscribe.dev](https://subscribe.dev), create a project, and copy your **Project Public Key** (starts with `pub_`)
-
-2. **Create .env file**:
-   - **Vite/Node**: `VITE_SUBSCRIBE_DEV_PROJECT_TOKEN=pub_your_actual_token`
-
-⚠️ **Important**: Replace the placeholder with your actual Project Public Key from the subscribe.dev dashboard.
-
-3) Gate by authentication and run a model
+4) Gate by authentication and run a model
 
 ```tsx
 import { useSubscribeDev } from '@subscribe.dev/react';
@@ -192,7 +122,7 @@ function AIApplication() {
 }
 ```
 
-4) Handle errors
+5) Handle errors
 
 ```tsx
 const handleAIRequest = async () => {
@@ -214,7 +144,7 @@ const handleAIRequest = async () => {
 };
 ```
 
-5) Show usage and plan status
+6) Show usage and plan status
 
 ```tsx
 const { usage, subscriptionStatus } = useSubscribeDev();
