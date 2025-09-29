@@ -274,6 +274,7 @@ jobs:
 
           **Important Quality Checks:**
           - CLAUDE.md is your primary source of truth for this project
+          - Always assume environment variables are available, and never leave situations where env vars are needed as mocked or TODO or placeholders. Environment variables are always there.
           - Ensure all changes are production-ready and fully functional
           - Test edge cases and error scenarios
           - Verify responsive behavior across screen sizes
@@ -285,7 +286,7 @@ jobs:
 
           # Run Claude Code CLI with the prompt
           # The CLI will automatically detect and use CLAUDE.md through the prompt instructions
-          claude --allowedTools Edit,Read,Write,Glob,Grep < feature_prompt.txt || {
+          claude --allowedTools Edit,Read,Write,Glob,Grep,"Bash(npm install:*)","Bash(npm i:*)" < feature_prompt.txt || {
             echo "⚠️ Claude Code CLI execution had issues, checking for changes..."
           }
 
