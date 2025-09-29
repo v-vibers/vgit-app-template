@@ -28,7 +28,6 @@ npm install @subscribe.dev/react react@^18.2.0 react-dom@^18.2.0
 
 #### Provider Setup for Vite/Node
 
-**Production Mode:**
 ```tsx
 import { SubscribeDevProvider } from '@subscribe.dev/react';
 
@@ -61,7 +60,7 @@ rm -rf node_modules && npm install
 
 3) Add the provider
 
-**For Vite/Node projects (Production):**
+**For Vite/Node projects:**
 ```tsx
 import { SubscribeDevProvider } from '@subscribe.dev/react';
 
