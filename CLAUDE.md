@@ -6,28 +6,25 @@ This document is a concise guide to installing, integrating, and using the React
 
 ### Requirements
 
-- Bun is required for development and installation.
-  - Install Bun: https://bun.sh
-  - Install this package with bun add (preferably).
 - Use within a React app and wrap your app with the provider.
 - Provide a public project token via environment variable.
 - **React Version Compatibility**: React 18.x or older is required.
 
 > ⚠️ This SDK requires React 18. React 19+ is not supported and must be avoided, as it causes compatibility issues. If you encounter errors related to React version compatibility such as `ReactCurrentDispatcher`, ensure you are using React 18.
 
-### Vite & Bun Compatibility
+### Vite & Node Compatibility
 
-If you're using Vite or Bun, follow these guidelines:
+If you're using Vite or Node, follow these guidelines:
 
 #### Environment Variables
 - Use the `VITE_` prefix for environment variables.
 - Access via `import.meta.env.VITE_*`.
 
 #### React Version
-Vite and Bun projects support React 18 and newer. If you encounter errors related to React version compatibility, ensure you are using React 18+.
+Vite and Node projects support React 18 and newer. If you encounter errors related to React version compatibility, ensure you are using React 18+.
 
 ```bash
-bun add @subscribe.dev/react react@^18.2.0 react-dom@^18.2.0
+npm install @subscribe.dev/react react@^18.2.0 react-dom@^18.2.0
 ```
 
 #### Environment Setup
@@ -48,13 +45,13 @@ For development and testing, you can use demo mode without any token:
 
 **Step 2: Create .env file**
 ```bash
-# .env file for Vite or Bun
+# .env file for Vite or Node
 VITE_SUBSCRIBE_DEV_PROJECT_TOKEN=pub_your_actual_token_here
 ```
 
 **Important**: Replace `pub_your_actual_token_here` with your actual Project Public Key from subscribe.dev dashboard.
 
-#### Provider Setup for Vite/Bun
+#### Provider Setup for Vite/Node
 
 **Demo Mode:**
 ```tsx
@@ -87,17 +84,17 @@ function App() {
 1) Install
 
 ```bash
-bun add @subscribe.dev/react
+npm install @subscribe.dev/react
 ```
 
 2) **CRITICAL: Ensure React Version Compatibility**
 
-⚠️ **For Vite/Bun users**: This package requires React 18+. If you encounter errors related to React version compatibility, ensure you are using React 18 or newer:
+⚠️ **For Vite/Node users**: This package requires React 18+. If you encounter errors related to React version compatibility, ensure you are using React 18 or newer:
 
 ```bash
-bun remove react react-dom
-bun add react@^18.2.0 react-dom@^18.2.0
-rm -rf node_modules && bun install
+npm rm react react-dom
+npm install react@^18.2.0 react-dom@^18.2.0
+rm -rf node_modules && npm install
 ```
 
 3) Add the provider
@@ -115,7 +112,7 @@ export function App() {
 }
 ```
 
-**For Vite/Bun projects (Production):**
+**For Vite/Node projects (Production):**
 ```tsx
 import { SubscribeDevProvider } from '@subscribe.dev/react';
 
@@ -143,7 +140,7 @@ For production, create a project in the Subscribe.dev Platform and use its Proje
 1. **Get your token**: Sign up at [Subscribe.dev](https://subscribe.dev), create a project, and copy your **Project Public Key** (starts with `pub_`)
 
 2. **Create .env file**:
-   - **Vite/Bun**: `VITE_SUBSCRIBE_DEV_PROJECT_TOKEN=pub_your_actual_token`
+   - **Vite/Node**: `VITE_SUBSCRIBE_DEV_PROJECT_TOKEN=pub_your_actual_token`
 
 ⚠️ **Important**: Replace the placeholder with your actual Project Public Key from the subscribe.dev dashboard.
 
@@ -745,14 +742,14 @@ function AnotherBadComponent() {
 
 ### Build Tools Compatibility
 
-#### Vite & Bun
+#### Vite & Node
 
-| Feature | Vite/Bun |
+| Feature | Vite/Node |
 |---------|----------|
 | Environment Variables | `import.meta.env.VITE_*` |
 | React Version Support | React 18+ |
 | Environment File | `VITE_SUBSCRIBE_DEV_PROJECT_TOKEN=token` |
-| Bundle Tool | Vite/Bun |
+| Nodedle Tool | Vite/Node |
 | Hot Reload | Built-in |
 | Demo Mode Support | ✅ No token required |
 
@@ -873,7 +870,6 @@ function MultiModalApp() {
 ### Troubleshooting
 
 #### Installation & Setup Issues
-- **"Cannot find bun"**: Install Bun and ensure it's on your PATH: `curl -fsSL https://bun.sh/install | bash`
 - **Provider error**: Ensure all components that call useSubscribeDev are children of SubscribeDevProvider.
 
 #### Authentication & API Issues
@@ -892,7 +888,7 @@ function MultiModalApp() {
 - **"React Hook called conditionally" errors**: You're calling `useStorage` (or other hooks) conditionally. Use component separation pattern instead (see React Hooks Best Practices section).
 - **ESLint react-hooks/rules-of-hooks errors**: Follow the component separation pattern. Never call hooks inside conditions, loops, or nested functions.
 
-#### Vite/Bun Specific Issues
+#### Vite/Node Specific Issues
 - **Blank screen with console errors**: Check browser console for specific error messages above. Common causes:
   - Wrong environment variable access pattern (see above)
   - React version incompatibility (see above)
@@ -902,7 +898,7 @@ function MultiModalApp() {
 - **Environment variables not loading**:
   - Ensure your `.env` file is in the project root
   - Restart development server after changing `.env`
-  - For Vite/Bun: Use `VITE_` prefix
+  - For Vite/Node: Use `VITE_` prefix
 
 ### Notes
 
