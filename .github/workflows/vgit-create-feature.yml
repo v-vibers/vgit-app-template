@@ -130,14 +130,14 @@ jobs:
       - name: Prepare runtime environment variables
         run: |
           echo "🔧 Preparing runtime environment variables..."
-          
+
           # Debug: Show which environment variables are available (names only, not values)
           echo "🔍 Available environment variables (for debugging):"
           env | grep -E '^(ANTHROPIC|SUBSCRIBE|OPENAI|CUSTOM)' | cut -d'=' -f1 | sort || echo "No addon-related environment variables found"
-          
+
           # Parse runtime_vars input (comma-separated list)
           RUNTIME_VARS="${{ github.event.inputs.runtime_vars }}"
-          
+
           if [ -n "$RUNTIME_VARS" ] && [ "$RUNTIME_VARS" != "" ]; then
             echo "📋 Runtime variables to expose: $RUNTIME_VARS"
             
@@ -180,12 +180,12 @@ jobs:
             chmod +x runtime_env_setup.sh
           fi
 
-      - name: Install Claude Code CLI
+      - name: Install Claude Agent SDK
         run: |
-          echo "📦 Installing Claude Code CLI..."
-          npm install -g @anthropic-ai/claude-code
-          echo "✅ Claude Code CLI installed"
-          claude --version
+          echo "📦 Installing Claude Agent SDK and dependencies..."
+          npm install @anthropic-ai/claude-agent-sdk
+          npm install -g tsx  # TypeScript executor
+          echo "✅ Claude Agent SDK installed"
 
       - name: Check for CLAUDE.md
         run: |
@@ -197,11 +197,11 @@ jobs:
             echo "ℹ️ No CLAUDE.md found - using generic instructions"
           fi
 
-      - name: Implement feature with Claude Code CLI
+      - name: Implement feature with Claude Agent SDK
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
-          echo "🤖 Running Claude Code CLI to implement feature..."
+          echo "🤖 Running Claude Agent SDK to implement feature..."
 
           # Create prompt file
           cat > feature_prompt.txt << 'PROMPT_EOF'
@@ -284,18 +284,36 @@ jobs:
           Start by reading CLAUDE.md (if present), then implement the feature with professional-grade UI/UX.
           PROMPT_EOF
 
-          # Run Claude Code CLI with the prompt
-          # The CLI will automatically detect and use CLAUDE.md through the prompt instructions
-          claude --output-format text --verbose --allowedTools Edit,Read,Write,Glob,Grep,"Bash(npm install:*)","Bash(npm i:*)" < feature_prompt.txt || {
-            echo "⚠️ Claude Code CLI execution had issues, checking for changes..."
+          # Run Claude Agent SDK with the prompt
+          # Captures all logs to claude-agent.log for later analysis
+          tsx .github/scripts/run-claude-agent.ts feature_prompt.txt || {
+            echo "⚠️ Claude Agent SDK execution had issues, checking for changes..."
+            CLAUDE_FAILED=true
           }
 
-          echo "✅ Claude Code CLI execution completed"
+          echo "✅ Claude Agent SDK execution completed"
+
+          # Check if execution failed and save status
+          if [ "$CLAUDE_FAILED" = "true" ]; then
+            echo "CLAUDE_EXECUTION_FAILED=true" >> $GITHUB_ENV
+          fi
+
+      - name: Upload Claude Agent logs as artifact
+        if: always()  # Upload logs even if previous step failed
+        uses: actions/upload-artifact@v4
+        with:
+          name: claude-agent-logs
+          path: |
+            claude-agent.log
+            claude-agent.log.json
+            claude-error-summary.txt
+          retention-days: 7
+          if-no-files-found: warn
 
       - name: Install new dependencies (if package.json changed)
         run: |
           cat package.json
-        
+
           if git diff --name-only | grep -q "package.json"; then
             echo "📦 package.json was modified, installing new dependencies..."
             npm install
@@ -338,15 +356,39 @@ jobs:
           # Add all changes
           git add .
 
-          # Create commit message
-          COMMIT_MSG="feat: ${{ github.event.inputs.request }}
+          # Check if Claude execution failed and include error logs
+          if [ "$CLAUDE_EXECUTION_FAILED" = "true" ] && [ -f "claude-error-summary.txt" ]; then
+            echo "⚠️ Claude execution failed, including error logs in commit message"
 
-          🤖 Generated with VGit AI (Claude Code)
+            # Read error summary (truncated to 500 chars)
+            ERROR_SUMMARY=$(cat claude-error-summary.txt)
+
+            COMMIT_MSG="feat: ${{ github.event.inputs.request }} [FAILED]
+
+          ❌ Claude Agent SDK execution failed
+
+          🤖 Generated with VGit AI (Claude Agent SDK)
+
+          Branch: ${{ github.event.inputs.branch_name }}
+          Requested by: ${{ github.event.inputs.username }}
+
+          ---ERROR-LOG---
+          ${ERROR_SUMMARY}
+
+          Full logs available in GitHub Actions artifacts.
+
+          Co-Authored-By: Claude Code <ai@vgit.app>"
+          else
+            # Standard commit message for successful execution
+            COMMIT_MSG="feat: ${{ github.event.inputs.request }}
+
+          🤖 Generated with VGit AI (Claude Agent SDK)
 
           Branch: ${{ github.event.inputs.branch_name }}
           Requested by: ${{ github.event.inputs.username }}
 
           Co-Authored-By: Claude Code <ai@vgit.app>"
+          fi
 
           # Commit changes
           git commit -m "$COMMIT_MSG" || {
