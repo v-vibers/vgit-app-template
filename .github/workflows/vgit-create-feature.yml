@@ -281,6 +281,16 @@ jobs:
           - Do not make unnecessary changes outside the feature scope
           - Match the quality and style of existing components
 
+          **CRITICAL - Subscribe.dev Usage Policy:**
+          - ONLY use subscribe.dev when EXPLICITLY requested in the feature request
+          - Explicit requests include phrases like:
+            * "with subscribe.dev"
+            * "using subscribe.dev"
+            * "integrate subscribe.dev"
+            * "add subscribe.dev"
+          - If subscribe.dev is NOT explicitly mentioned, DO NOT add or use it
+          - Default to standard implementations without subscribe.dev unless specifically asked
+
           Start by reading CLAUDE.md (if present), then implement the feature with professional-grade UI/UX.
           PROMPT_EOF
 
