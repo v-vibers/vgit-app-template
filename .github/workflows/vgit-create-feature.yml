@@ -180,12 +180,11 @@ jobs:
             chmod +x runtime_env_setup.sh
           fi
 
-      - name: Install Claude Agent SDK
+      - name: Install Anthropic SDK
         run: |
-          echo "📦 Installing Claude Agent SDK and dependencies..."
-          npm install @anthropic-ai/claude-agent-sdk
-          npm install -g tsx  # TypeScript executor
-          echo "✅ Claude Agent SDK installed"
+          echo "📦 Installing Anthropic SDK and TypeScript tools..."
+          npm install @anthropic-ai/sdk@latest tsx @types/node
+          echo "✅ Anthropic SDK installed"
 
       - name: Check for CLAUDE.md
         run: |
@@ -197,126 +196,403 @@ jobs:
             echo "ℹ️ No CLAUDE.md found - using generic instructions"
           fi
 
-      - name: Implement feature with Claude Agent SDK
+      - name: Implement feature with Anthropic SDK
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
-          echo "🤖 Running Claude Agent SDK to implement feature..."
-
-          # Create prompt file
-          cat > feature_prompt.txt << 'PROMPT_EOF'
-          Please implement the following feature request:
-
-          **Feature Request:** ${{ github.event.inputs.request }}
-
-          **Project Context:**
-          - Repository: ${{ github.repository }}
-          - Branch: ${{ github.event.inputs.branch_name }}
-          - Base Branch: ${{ github.event.inputs.base_branch }}
-          - Requested by: ${{ github.event.inputs.username }}
-
-          **CRITICAL - Read Project Instructions First:**
-          1. Check if there is a CLAUDE.md file in the repository root
-          2. If CLAUDE.md exists, READ IT FIRST and follow ALL guidelines specified there
-          3. The CLAUDE.md file contains critical project-specific instructions, architecture details, and conventions
-          4. All implementation decisions should follow the patterns and guidelines in CLAUDE.md
-
-          **Implementation Steps:**
-          1. Read CLAUDE.md if it exists (this is mandatory!)
-          2. Analyze the existing codebase structure and patterns (check existing components, styling approach, state management)
-          3. Implement the feature following the project's conventions from CLAUDE.md
-          4. If you need to add dependencies, update package.json accordingly
-          5. Ensure the code compiles and follows best practices
-          6. Make minimal, focused changes that accomplish the feature request
-
-          **Frontend/UI Implementation Best Practices:**
-          When implementing UI features, pages, or components:
-
-          - **Layout & Spacing:**
-            - Use fullscreen layouts when appropriate (min-h-screen, w-full, h-full)
-            - Implement proper responsive design with mobile-first approach
-            - Use consistent spacing (padding, margin) following the project's design system
-            - Utilize flexbox/grid for layouts (flex, grid, gap utilities)
-
-          - **Styling & Visual Design:**
-            - Follow the existing styling approach (CSS Modules, Tailwind, styled-components, etc.)
-            - Maintain consistent color palette and theming from existing components
-            - Add smooth transitions and hover states for interactive elements
-            - Ensure proper contrast ratios for accessibility (WCAG AA minimum)
-            - Use semantic color names (primary, secondary, accent, etc.)
-
-          - **Component Architecture:**
-            - Create reusable, composable components
-            - Separate presentation from business logic
-            - Use TypeScript interfaces for all component props
-            - Implement proper loading states, error boundaries, and empty states
-            - Follow existing file structure and naming conventions
-
-          - **User Experience:**
-            - Add loading spinners or skeletons for async operations
-            - Implement proper error handling with user-friendly messages
-            - Provide visual feedback for user actions (button states, form validation)
-            - Ensure keyboard navigation and focus management
-            - Add appropriate aria-labels for accessibility
-
-          - **Modern UI Patterns:**
-            - Use CSS Grid/Flexbox for complex layouts
-            - Implement proper z-index layering for modals, dropdowns, tooltips
-            - Add smooth animations (transform, opacity) not layout shifts
-            - Use CSS variables for theming support
-            - Implement dark mode support if the project has it
-
-          - **Performance:**
-            - Lazy load components when appropriate
-            - Optimize images (proper formats, sizes, lazy loading)
-            - Avoid unnecessary re-renders (useMemo, useCallback, React.memo)
-            - Use code splitting for large features
-
-          **Important Quality Checks:**
-          - CLAUDE.md is your primary source of truth for this project
-          - Always assume environment variables are available, and never leave situations where env vars are needed as mocked or TODO or placeholders. Environment variables are always there.
-          - Ensure all changes are production-ready and fully functional
-          - Test edge cases and error scenarios
-          - Verify responsive behavior across screen sizes
-          - Do not make unnecessary changes outside the feature scope
-          - Match the quality and style of existing components
-
-          **CRITICAL - Subscribe.dev Usage Policy:**
-          - ONLY use subscribe.dev when EXPLICITLY requested in the feature request
-          - Explicit requests include phrases like:
-            * "with subscribe.dev"
-            * "using subscribe.dev"
-            * "integrate subscribe.dev"
-            * "add subscribe.dev"
-          - If subscribe.dev is NOT explicitly mentioned, DO NOT add or use it
-          - Default to standard implementations without subscribe.dev unless specifically asked
-
-          Start by reading CLAUDE.md (if present), then implement the feature with professional-grade UI/UX.
-          PROMPT_EOF
-
-          # Run Claude Agent SDK with the prompt
-          # Captures all logs to claude-agent.log for later analysis
-          tsx .github/scripts/run-claude-agent.ts feature_prompt.txt || {
-            echo "⚠️ Claude Agent SDK execution had issues, checking for changes..."
-            CLAUDE_FAILED=true
-          }
-
-          echo "✅ Claude Agent SDK execution completed"
-
-          # Check if execution failed and save status
-          if [ "$CLAUDE_FAILED" = "true" ]; then
-            echo "CLAUDE_EXECUTION_FAILED=true" >> $GITHUB_ENV
+          if [ -z "$ANTHROPIC_API_KEY" ]; then
+            echo "❌ ANTHROPIC_API_KEY is required"
+            exit 1
           fi
 
-      - name: Upload Claude Agent logs as artifact
+          echo "🤖 Running Anthropic SDK to implement feature..."
+
+          # Create the feature implementation script
+          cat > implement_feature.ts << 'TYPESCRIPT_EOF'
+import fs from 'node:fs';
+import path from 'node:path';
+import { exec } from 'node:child_process';
+import { promisify } from 'node:util';
+import Anthropic from '@anthropic-ai/sdk';
+
+const execAsync = promisify(exec);
+
+// Logging system
+interface LogEntry {
+  timestamp: string;
+  type: 'system' | 'tool' | 'message' | 'error';
+  content: string;
+  metadata?: any;
+}
+
+const logs: LogEntry[] = [];
+
+function log(type: LogEntry['type'], content: string, metadata?: any) {
+  const entry: LogEntry = {
+    timestamp: new Date().toISOString(),
+    type,
+    content,
+    metadata
+  };
+  logs.push(entry);
+
+  const prefix = type === 'error' ? '❌' : type === 'tool' ? '🔧' : type === 'message' ? '💬' : '📝';
+  console.log(`${prefix} [${type.toUpperCase()}] ${content}`);
+  if (metadata) console.log('   ', JSON.stringify(metadata, null, 2));
+
+  // Append to log file immediately
+  fs.appendFileSync('claude-execution.log', JSON.stringify(entry) + '\n');
+}
+
+// Tool implementations
+class Tools {
+  async read(filePath: string): Promise<string> {
+    try {
+      log('tool', `Reading file: ${filePath}`);
+      const content = fs.readFileSync(filePath, 'utf8');
+      log('tool', `Successfully read ${filePath} (${content.length} chars)`);
+      return content;
+    } catch (error) {
+      const msg = `Failed to read ${filePath}: ${error}`;
+      log('error', msg);
+      return `Error: ${msg}`;
+    }
+  }
+
+  async write(filePath: string, content: string): Promise<string> {
+    try {
+      log('tool', `Writing file: ${filePath}`, { contentLength: content.length });
+      fs.mkdirSync(path.dirname(filePath), { recursive: true });
+      fs.writeFileSync(filePath, content, 'utf8');
+      log('tool', `Successfully wrote ${filePath}`);
+      return `Successfully wrote ${filePath}`;
+    } catch (error) {
+      const msg = `Failed to write ${filePath}: ${error}`;
+      log('error', msg);
+      return `Error: ${msg}`;
+    }
+  }
+
+  async edit(filePath: string, oldText: string, newText: string): Promise<string> {
+    try {
+      log('tool', `Editing file: ${filePath}`);
+      const content = fs.readFileSync(filePath, 'utf8');
+
+      if (!content.includes(oldText)) {
+        const msg = `Old text not found in ${filePath}`;
+        log('error', msg);
+        return `Error: ${msg}`;
+      }
+
+      const newContent = content.replace(oldText, newText);
+      fs.writeFileSync(filePath, newContent, 'utf8');
+      log('tool', `Successfully edited ${filePath}`);
+      return `Successfully edited ${filePath}`;
+    } catch (error) {
+      const msg = `Failed to edit ${filePath}: ${error}`;
+      log('error', msg);
+      return `Error: ${msg}`;
+    }
+  }
+
+  async bash(command: string): Promise<string> {
+    try {
+      log('tool', `Executing bash: ${command}`);
+      const { stdout, stderr } = await execAsync(command, { maxBuffer: 10 * 1024 * 1024 });
+      const output = stdout + stderr;
+      log('tool', `Bash completed`, { command, outputLength: output.length });
+      return output || 'Command executed successfully';
+    } catch (error: any) {
+      const msg = `Bash command failed: ${error.message}`;
+      log('error', msg, { command });
+      return `Error: ${msg}\nOutput: ${error.stdout || ''}\n${error.stderr || ''}`;
+    }
+  }
+
+  async glob(pattern: string): Promise<string> {
+    try {
+      log('tool', `Glob pattern: ${pattern}`);
+      const { stdout } = await execAsync(`find . -path '${pattern}' -type f 2>/dev/null | head -100`);
+      const files = stdout.trim().split('\n').filter(Boolean);
+      log('tool', `Found ${files.length} files matching ${pattern}`);
+      return files.join('\n');
+    } catch (error) {
+      const msg = `Glob failed: ${error}`;
+      log('error', msg);
+      return `Error: ${msg}`;
+    }
+  }
+}
+
+// Main implementation
+async function implementFeature() {
+  try {
+    log('system', 'Starting feature implementation');
+
+    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
+    const tools = new Tools();
+    const FEATURE_REQUEST = process.env.FEATURE_REQUEST || '';
+
+    if (!FEATURE_REQUEST) {
+      log('error', 'No FEATURE_REQUEST provided');
+      process.exit(1);
+    }
+
+    log('system', `Feature request: ${FEATURE_REQUEST}`);
+
+    // Read CLAUDE.md if it exists
+    let claudeMd = '';
+    try {
+      claudeMd = await tools.read('CLAUDE.md');
+      log('system', 'Found and read CLAUDE.md');
+    } catch {
+      log('system', 'No CLAUDE.md found');
+    }
+
+    // Build comprehensive prompt
+    const systemPrompt = `You are an expert software engineer implementing features in this repository.
+
+You have access to these tools:
+- read(path): Read a file
+- write(path, content): Write/create a file
+- edit(path, old_text, new_text): Replace text in a file
+- bash(command): Run bash commands (use for git, npm, etc)
+- glob(pattern): Find files matching a pattern
+
+${claudeMd ? `\n## Project Instructions (CLAUDE.md)\n${claudeMd}\n` : ''}
+
+## Important Guidelines
+- ALWAYS read CLAUDE.md first if it exists
+- Follow ALL project conventions from CLAUDE.md
+- Assume environment variables are always available
+- Write production-ready, fully functional code
+- Match existing code style and patterns
+- Make focused, minimal changes
+- For UI: follow existing styling approach, ensure responsive design, add proper loading/error states
+- Subscribe.dev: ONLY use if explicitly mentioned in request (phrases: "with subscribe.dev", "using subscribe.dev", etc)
+
+You MUST use the provided tools to make changes. Do not just describe what to do - actually use the tools to implement the feature.`;
+
+    const userPrompt = `Implement this feature: ${FEATURE_REQUEST}
+
+Repository: ${process.env.GITHUB_REPOSITORY || 'unknown'}
+Branch: ${process.env.BRANCH_NAME || 'unknown'}
+
+Steps:
+1. Read CLAUDE.md if you haven't already (use read tool)
+2. Use glob/read to understand the codebase structure
+3. Make the necessary changes using write/edit tools
+4. Update package.json if adding dependencies (use edit tool)
+5. Use bash tool for npm install if needed
+
+Start implementing now using the tools.`;
+
+    // Define tool schemas for Claude
+    const toolDefinitions: Anthropic.Tool[] = [
+      {
+        name: 'read',
+        description: 'Read the contents of a file',
+        input_schema: {
+          type: 'object',
+          properties: {
+            path: { type: 'string', description: 'File path to read' }
+          },
+          required: ['path']
+        }
+      },
+      {
+        name: 'write',
+        description: 'Write content to a file (creates directories if needed)',
+        input_schema: {
+          type: 'object',
+          properties: {
+            path: { type: 'string', description: 'File path to write' },
+            content: { type: 'string', description: 'Content to write' }
+          },
+          required: ['path', 'content']
+        }
+      },
+      {
+        name: 'edit',
+        description: 'Edit a file by replacing old text with new text',
+        input_schema: {
+          type: 'object',
+          properties: {
+            path: { type: 'string', description: 'File path to edit' },
+            old_text: { type: 'string', description: 'Text to replace' },
+            new_text: { type: 'string', description: 'Replacement text' }
+          },
+          required: ['path', 'old_text', 'new_text']
+        }
+      },
+      {
+        name: 'bash',
+        description: 'Execute a bash command',
+        input_schema: {
+          type: 'object',
+          properties: {
+            command: { type: 'string', description: 'Bash command to execute' }
+          },
+          required: ['command']
+        }
+      },
+      {
+        name: 'glob',
+        description: 'Find files matching a glob pattern',
+        input_schema: {
+          type: 'object',
+          properties: {
+            pattern: { type: 'string', description: 'Glob pattern (e.g., "**/*.ts")' }
+          },
+          required: ['pattern']
+        }
+      }
+    ];
+
+    // Conversation loop
+    const messages: Anthropic.MessageParam[] = [
+      { role: 'user', content: userPrompt }
+    ];
+
+    let continueLoop = true;
+    let iterationCount = 0;
+    const MAX_ITERATIONS = 20;
+
+    while (continueLoop && iterationCount < MAX_ITERATIONS) {
+      iterationCount++;
+      log('system', `Iteration ${iterationCount}/${MAX_ITERATIONS}`);
+
+      const response = await client.messages.create({
+        model: 'claude-sonnet-4-5-20250929',
+        max_tokens: 4096,
+        system: systemPrompt,
+        messages,
+        tools: toolDefinitions
+      });
+
+      log('message', `Claude response (stop_reason: ${response.stop_reason})`);
+
+      // Process response content
+      let hasToolUse = false;
+      const toolResults: Anthropic.ToolResultBlockParam[] = [];
+
+      for (const block of response.content) {
+        if (block.type === 'text') {
+          log('message', `Claude: ${block.text.substring(0, 200)}${block.text.length > 200 ? '...' : ''}`);
+        } else if (block.type === 'tool_use') {
+          hasToolUse = true;
+          log('tool', `Tool call: ${block.name}`, block.input);
+
+          let result: string;
+          try {
+            switch (block.name) {
+              case 'read':
+                result = await tools.read((block.input as any).path);
+                break;
+              case 'write':
+                result = await tools.write((block.input as any).path, (block.input as any).content);
+                break;
+              case 'edit':
+                result = await tools.edit((block.input as any).path, (block.input as any).old_text, (block.input as any).new_text);
+                break;
+              case 'bash':
+                result = await tools.bash((block.input as any).command);
+                break;
+              case 'glob':
+                result = await tools.glob((block.input as any).pattern);
+                break;
+              default:
+                result = `Unknown tool: ${block.name}`;
+            }
+          } catch (error) {
+            result = `Tool execution error: ${error}`;
+            log('error', result);
+          }
+
+          toolResults.push({
+            type: 'tool_result',
+            tool_use_id: block.id,
+            content: result
+          });
+        }
+      }
+
+      // Check if we should continue
+      if (response.stop_reason === 'end_turn' || !hasToolUse) {
+        continueLoop = false;
+        log('system', 'Conversation ended');
+      } else {
+        // Add assistant message and tool results to conversation
+        messages.push({
+          role: 'assistant',
+          content: response.content
+        });
+
+        if (toolResults.length > 0) {
+          messages.push({
+            role: 'user',
+            content: toolResults
+          });
+        }
+      }
+    }
+
+    if (iterationCount >= MAX_ITERATIONS) {
+      log('system', 'Reached maximum iterations');
+    }
+
+    log('system', 'Feature implementation completed');
+
+    // Save logs
+    fs.writeFileSync('claude-execution.log.json', JSON.stringify({ logs, totalIterations: iterationCount }, null, 2));
+
+    return 0;
+
+  } catch (error: any) {
+    log('error', `Fatal error: ${error.message}`, { stack: error.stack });
+
+    // Save error summary
+    const errorLogs = logs.filter(l => l.type === 'error');
+    const errorSummary = errorLogs.map(l => l.content).join('\n');
+    fs.writeFileSync('claude-error-summary.txt', errorSummary);
+
+    // Save all logs
+    fs.writeFileSync('claude-execution.log.json', JSON.stringify({ logs, error: error.message }, null, 2));
+
+    return 1;
+  }
+}
+
+// Run
+implementFeature().then(code => {
+  process.exit(code);
+}).catch(error => {
+  console.error('❌ Unhandled error:', error);
+  process.exit(1);
+});
+TYPESCRIPT_EOF
+
+          echo "📋 Running feature implementation with Anthropic SDK..."
+
+          FEATURE_REQUEST='${{ github.event.inputs.request }}' \
+          GITHUB_REPOSITORY='${{ github.repository }}' \
+          BRANCH_NAME='${{ github.event.inputs.branch_name }}' \
+          npx tsx implement_feature.ts || {
+            echo "CLAUDE_EXECUTION_FAILED=true" >> $GITHUB_ENV
+          }
+
+          echo "✅ Anthropic SDK execution completed"
+
+      - name: Upload Claude execution logs as artifact
         if: always()  # Upload logs even if previous step failed
         uses: actions/upload-artifact@v4
         with:
-          name: claude-agent-logs
+          name: claude-execution-logs
           path: |
-            claude-agent.log
-            claude-agent.log.json
+            claude-execution.log
+            claude-execution.log.json
             claude-error-summary.txt
+            implement_feature.ts
           retention-days: 7
           if-no-files-found: warn
 
@@ -375,9 +651,9 @@ jobs:
 
             COMMIT_MSG="feat: ${{ github.event.inputs.request }} [FAILED]
 
-          ❌ Claude Agent SDK execution failed
+          ❌ Claude SDK execution failed
 
-          🤖 Generated with VGit AI (Claude Agent SDK)
+          🤖 Generated with VGit AI (Anthropic SDK)
 
           Branch: ${{ github.event.inputs.branch_name }}
           Requested by: ${{ github.event.inputs.username }}
@@ -392,7 +668,7 @@ jobs:
             # Standard commit message for successful execution
             COMMIT_MSG="feat: ${{ github.event.inputs.request }}
 
-          🤖 Generated with VGit AI (Claude Agent SDK)
+          🤖 Generated with VGit AI (Anthropic SDK)
 
           Branch: ${{ github.event.inputs.branch_name }}
           Requested by: ${{ github.event.inputs.username }}
